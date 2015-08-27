@@ -143,6 +143,7 @@ abstract class Dataset(
 
   def checkData(): Unit = {
     tablesForTest.foreach { table =>
+    //  println(s"table.outputDir is ${table.outputDir}")
       val fs = FileSystem.get(new java.net.URI(table.outputDir), new Configuration())
       val exists = fs.exists(new Path(table.outputDir))
       val wasSuccessful = fs.exists(new Path(s"${table.outputDir}/_SUCCESS"))
@@ -150,8 +151,11 @@ abstract class Dataset(
       if (!wasSuccessful) {
         if (exists) {
           println(s"Table '${table.name}' not generated successfully, regenerating.")
+      //    println("Shutdown the JVM....")
         } else {
           println(s"Table '${table.name}' does not exist, generating.")
+        //  println("Shutdown the JVM")
+          //System.exit(-1)
         }
         fs.delete(new Path(table.outputDir), true)
         table.generate()

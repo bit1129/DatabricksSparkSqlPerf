@@ -36,7 +36,8 @@ abstract class TableForTest(
 
   val name = table.name
 
-  val outputDir = s"$baseDir/parquet/${name}"
+  //Used to be   val outputDir = s"$baseDir/parquet/${name}"
+  val outputDir = s"$baseDir/${name}"
 
   def fromCatalog = sqlContext.table(name)
 
