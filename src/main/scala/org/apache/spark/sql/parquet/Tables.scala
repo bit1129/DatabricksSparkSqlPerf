@@ -14,36 +14,37 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.parquet
-
-// This is a hack until parquet has better support for partitioning.
+package org.apache.spark.sql.parquet // This is a hack until parquet has better support for partitioning.
 
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.databricks.spark.sql.perf._
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.hadoop.mapreduce.lib.output.{FileOutputFormat => NewFileOutputFormat}
-import org.apache.hadoop.mapreduce.{Job, OutputCommitter, RecordWriter, TaskAttemptContext}
-import org.apache.spark.SerializableWritable
 import org.apache.spark.mapreduce.SparkHadoopMapReduceUtil
-import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import org.apache.spark.sql.{Column, ColumnName, SQLContext}
-import parquet.hadoop.ParquetOutputFormat
-import parquet.hadoop.util.ContextUtil
 
 import scala.sys.process._
 
 
+import org.apache.hadoop.mapreduce.lib.output.{FileOutputFormat => NewFileOutputFormat}
+
+import com.databricks.spark.sql.perf._
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.mapreduce.{OutputCommitter, TaskAttemptContext, RecordWriter, Job}
+import org.apache.spark.SerializableWritable
+import org.apache.spark.sql.{Column, ColumnName, SQLContext}
+import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
+import parquet.hadoop.ParquetOutputFormat
+import parquet.hadoop.util.ContextUtil
+
+
 case class TPCDSTableForTest(
-    table: Table,
-    baseDir: String,
-    scaleFactor: Int,
-    dsdgenDir: String,
-    @transient sqlContext: SQLContext,
-    maxRowsPerPartitions: Int = 20 * 1000 * 1000)
+                              table: Table,
+                              baseDir: String,
+                              scaleFactor: Int,
+                              dsdgenDir: String,
+                              @transient sqlContext: SQLContext,
+                              maxRowsPerPartitions: Int = 20 * 1000 * 1000)
   extends TableForTest(table, baseDir, sqlContext) with Serializable with SparkHadoopMapReduceUtil {
 
   @transient val sparkContext = sqlContext.sparkContext
@@ -107,11 +108,11 @@ case class TPCDSTableForTest(
         val job = new Job(sqlContext.sparkContext.hadoopConfiguration)
 
         val writeSupport =
-          //if (schema.fields.map(_.dataType).forall(_.isPrimitive)) {
+          if (schema.fields.map(_.dataType).forall(ParquetTypesConverter.isPrimitiveType)) {
             classOf[org.apache.spark.sql.parquet.MutableRowWriteSupport]
-          //} else {
-          //  classOf[org.apache.spark.sql.parquet.RowWriteSupport]
-          //}
+          } else {
+            classOf[org.apache.spark.sql.parquet.RowWriteSupport]
+          }
 
         ParquetOutputFormat.setWriteSupportClass(job, writeSupport)
 
@@ -134,6 +135,11 @@ case class TPCDSTableForTest(
           var hadoopContext: TaskAttemptContext = null
           var committer: OutputCommitter = null
 
+          val job = new Job(conf.value)
+          val keyType = classOf[Void]
+          job.setOutputKeyClass(keyType)
+          job.setOutputValueClass(classOf[Row])
+
           var rowCount = 0
           var partition = 0
 
@@ -148,6 +154,7 @@ case class TPCDSTableForTest(
               if (writer != null) {
                 writer.close(hadoopContext)
                 committer.commitTask(hadoopContext)
+                committer.commitJob(job)
               }
               writer = null
             }
@@ -159,12 +166,9 @@ case class TPCDSTableForTest(
               if (writer != null) {
                 writer.close(hadoopContext)
                 committer.commitTask(hadoopContext)
+                committer.commitJob(job)
               }
 
-              val job = new Job(conf.value)
-              val keyType = classOf[Void]
-              job.setOutputKeyClass(keyType)
-              job.setOutputValueClass(classOf[Row])
               NewFileOutputFormat.setOutputPath(
                 job,
                 new Path(s"$outputDir/$partitioningColumn=${currentPartition(0)}"))
@@ -190,6 +194,7 @@ case class TPCDSTableForTest(
           if (writer != null) {
             writer.close(hadoopContext)
             committer.commitTask(hadoopContext)
+            committer.commitJob(job)
           }
         }
         val fs = FileSystem.get(new java.net.URI(outputDir), new Configuration())
@@ -405,6 +410,5 @@ case class Tables(sqlContext: SQLContext) {
       't_am_pm                   .string,
       't_shift                   .string,
       't_sub_shift               .string,
-      't_meal_time               .string)
-)
+      't_meal_time               .string))
 }
