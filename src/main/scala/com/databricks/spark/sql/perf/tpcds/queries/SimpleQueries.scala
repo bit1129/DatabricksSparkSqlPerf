@@ -135,7 +135,23 @@ object SimpleQueries {
               |  i_item_id
               |limit 100
               |-- end query 1 in stream 0 using template query7.tpl
-            """.stripMargin)
+            """.stripMargin),
+     ("q7-shuffledJoin",
+       """
+         |select
+         |  ss_quantity,
+         |  ss_list_price,
+         |  ss_coupon_amt,
+         |  ss_coupon_amt,
+         |  ss_cdemo_sk,
+         |  ss_item_sk,
+         |  ss_promo_sk,
+         |  ss_sold_date_sk
+         |from store_sales
+         |  join customer on(store_sales.ss_customer_sk = c_customer_sk)
+         |where
+         |  ss_sold_date_sk between 2450815 and 2451179
+       """.stripMargin)
    ).map {
      case (name, sqlText) => Query(name = name, sqlText = sqlText, description = "", collectResults = false)
    }
