@@ -27,7 +27,6 @@ import org.apache.spark.sql.{Column, SQLContext}
  * @param sparkVersion The version of Spark.
  * @param dataLocation The location of the dataset used by this experiment.
  * @param dsdgenDir The location of dsdgen in every worker machine.
- * @param resultsLocation The location of performance results.
  * @param tables Tables that will be used in this experiment.
  * @param scaleFactor The scale factor of the dataset. For some benchmarks like TPC-H
  *                    and TPC-DS, the scale factor is a number roughly representing the
@@ -74,7 +73,10 @@ class TPCDS (
         .select(max('sizeInBytes))
         .first()
         .getLong(0)
-    val setQuery = s"SET spark.sql.autoBroadcastJoinThreshold=$threshold"
+    //Compare ShuffledHashJoin with BroadcastHashJoin
+    //how to read the threshold from configuration
+    val myThreshold=30*1024*1024 //30M
+    val setQuery = s"SET spark.sql.autoBroadcastJoinThreshold=$myThreshold"
 
     println(setQuery)
     sql(setQuery)
