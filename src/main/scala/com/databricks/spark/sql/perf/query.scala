@@ -63,7 +63,16 @@ case class QueryForTest(
       val executionTime = if (query.collectResults) {
         benchmarkMs { dataFrame.rdd.collect() }
       } else {
-        benchmarkMs { dataFrame.rdd.foreach {row => Unit } }
+        benchmarkMs {
+//          if (query.name.contains("q7-count")) {
+//            val rows = dataFrame.collect()
+//            val cntRDD = dataFrame.sqlContext.sparkContext.parallelize(rows.map(row=>row.get(0)))
+//            cntRDD.repartition(1).saveAsTextFile("hdfs://ns1/tmp/spark_perf_result/cnt-" + System.currentTimeMillis())
+//          } else {
+//            dataFrame.foreach(row=>Unit)
+//          }
+          dataFrame.rdd.foreach {row => Unit }
+        }
       }
 
       val joinTypes = dataFrame.queryExecution.executedPlan.collect {

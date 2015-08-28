@@ -151,6 +151,29 @@ object SimpleQueries {
          |  join customer on(store_sales.ss_customer_sk = c_customer_sk)
          |where
          |  ss_sold_date_sk between 2450815 and 2451179
+       """.stripMargin),
+     ("q7-count",
+       """
+         |select
+         |  count(1)
+         |from store_sales
+         |where
+         |  ss_sold_date_sk between 2451140 and 2451179
+
+       """.stripMargin),
+     ("q7-2big-shuffledJoin",
+       """
+         |select
+         |  t1.ss_quantity,
+         |  t1.ss_list_price,
+         |  t1.ss_coupon_amt,
+         |  t1.ss_cdemo_sk,
+         |  t1.ss_item_sk,
+         |  t1.ss_promo_sk,
+         |  t1.ss_sold_date_sk
+         |from store_sales t1 join store_sales t2 on t1.ss_item_sk = t2.ss_item_sk
+         |where
+         |  t1.ss_sold_date_sk between 2450815 and 2451179
        """.stripMargin)
    ).map {
      case (name, sqlText) => Query(name = name, sqlText = sqlText, description = "", collectResults = false)
