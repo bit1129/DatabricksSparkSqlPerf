@@ -187,7 +187,7 @@ object SimpleQueries {
          |  t1.ss_item_sk,
          |  t1.ss_promo_sk,
          |  t1.ss_sold_date_sk
-         |from store_sales t1 join store_sales t2 on t1.ss_item_sk = t2.ss_item_sk
+         |from store_sales t1 join store_sales t2 on t1.ss_item_sk = t2.ss_item_sk and t1.ss_ticket_number=t2.ss_ticket_number
          |where
          |  t1.ss_sold_date_sk between 2450815 and 2451179
        """.stripMargin),
