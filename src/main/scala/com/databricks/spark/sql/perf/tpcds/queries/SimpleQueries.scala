@@ -161,6 +161,7 @@ object SimpleQueries {
          |  ss_sold_date_sk between 2451140 and 2451179
 
        """.stripMargin),
+
      ("q7-2big-shuffledJoin",
        """
          |select
@@ -174,7 +175,22 @@ object SimpleQueries {
          |from store_sales t1 join store_sales t2 on t1.ss_item_sk = t2.ss_item_sk
          |where
          |  t1.ss_sold_date_sk between 2450815 and 2451179
+       """.stripMargin),
+
+       ("q7-bigtable-scan",
+           """
+             |select *
+             |from store_sales
+           """.stripMargin),
+
+
+     ("q7-1big-orderby",
+       """
+         |select distinct(ss_item_sk)
+         |from store_sales
+         |order by ss_item_sk asc
        """.stripMargin)
+
    ).map {
      case (name, sqlText) => Query(name = name, sqlText = sqlText, description = "", collectResults = false)
    }
